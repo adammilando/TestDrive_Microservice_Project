@@ -18,10 +18,12 @@ namespace ReservationAPI.Services
         {
             _dbContext = new ApiDbContext();
         }
+        
+
         public async Task<List<Reservation>> GetAll()
         {
             string connectionString = "Endpoint=sb://testdrive.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=B8a+drSxt4kcUup8bu+nXHnCaV/WWYDO4+ASbKn/+xI=";
-            string queueName = "testdrive";
+            string queueName = "testdriveinfo";
             // since ServiceBusClient implements IAsyncDisposable we create it with "await using"
             await using var client = new ServiceBusClient(connectionString);
             // create a receiver that we can use to receive the message
@@ -38,11 +40,27 @@ namespace ReservationAPI.Services
             foreach (ServiceBusReceivedMessage receivedMessage in receivedMessages)
             {
                 string body = receivedMessage.Body.ToString();
-                var messageCreated = JsonConvert .DeserializeObject<Reservation>(body);
-                await _dbContext.Reservations.AddAsync(messageCreated);
-                await _dbContext.SaveChangesAsync();
+                var messageCreated = JsonConvert.DeserializeObject<Reservation>(body);
+
+                // Check if this is a delete operation
+                if (receivedMessage.ApplicationProperties.TryGetValue("DeleteOperation", out var deleteOperation) && (bool)deleteOperation)
+                {
+                    var reservationToDelete = await _dbContext.Reservations.FirstOrDefaultAsync(r => r.Id == messageCreated.Id);
+                    if (reservationToDelete != null)
+                    {
+                        _dbContext.Reservations.Remove(reservationToDelete);
+                        await _dbContext.SaveChangesAsync();
+                    }
+                }
+                else
+                {
+                    await _dbContext.Reservations.AddAsync(messageCreated);
+                    await _dbContext.SaveChangesAsync();
+                }
+
                 await receiver.CompleteMessageAsync(receivedMessage);
             }
+
             // get the message body as a string
             return await _dbContext.Reservations.ToListAsync();
         }

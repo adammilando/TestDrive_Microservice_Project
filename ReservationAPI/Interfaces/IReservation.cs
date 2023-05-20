@@ -7,4 +7,5 @@ namespace ReservationAPI.Interfaces
         Task<List<Reservation>> GetAll();
         Task UpdateMailStatus(int id);
     }
+
 }

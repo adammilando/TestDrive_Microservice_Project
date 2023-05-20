@@ -17,10 +17,23 @@ namespace CustomerAPI.Controllers
             _customerService = customerService;
         }
 
+        [HttpGet]
+        public async Task<IEnumerable<Customer>> Get()
+        {
+            var vehilce = await _customerService.GetAllCustomers();
+            return vehilce;
+        }
+
         [HttpPost]
         public async Task create([FromBody] Customer customer)
         {
             await _customerService.addCustomer(customer);
+        }
+
+        [HttpDelete]
+        public async Task Delete(int id)
+        {
+            await _customerService.DeleteCustomer(id);
         }
 
     }

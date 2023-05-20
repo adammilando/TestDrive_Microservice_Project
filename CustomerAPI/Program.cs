@@ -10,6 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<ICustomer, CustomerService>();
+builder.Services.AddHostedService<VehicleUpdateListenerService>();
 
 var app = builder.Build();
 
